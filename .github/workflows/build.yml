@@ -11,9 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o projeto zipado
+      # 1. Descompacta o novo arquivo zip enviado
       - name: Extract project zip
-        run: unzip "inventario_app (1).zip" || unzip inventario_app.zip
+        run: |
+          unzip -o "inventario_app (2).zip" || unzip -o "inventario_app (1).zip" || unzip -o inventario_app.zip
 
       # 2. Configura o Java 17
       - name: Set up Java
@@ -22,24 +23,24 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. Configura o Flutter
+      # 3. Configura o Flutter SDK
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 4. Gera a estrutura do Android
+      # 4. Gera a estrutura de arquivos nativos do Android
       - name: Recreate Android native files
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Adiciona a permissão da câmera no AndroidManifest
+      # 5. Injeta a permissão de CÂMERA no AndroidManifest.xml
       - name: Add Camera Permission
         run: |
           MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
 
-      # 6. Baixa as dependências do Flutter
+      # 6. Instala as dependências do pubspec.yaml (mobile_scanner, provider, etc)
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
@@ -49,7 +50,7 @@ jobs:
         working-directory: ./inventario_app
         run: flutter build apk --release
 
-      # 8. Sobe o arquivo gerado para download
+      # 8. Disponibiliza o APK para download no GitHub
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
