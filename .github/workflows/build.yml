@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o novo arquivo zip enviado
+      # 1. Descompacta o arquivo zip enviado
       - name: Extract project zip
         run: |
           unzip -o "inventario_app (2).zip" || unzip -o "inventario_app (1).zip" || unzip -o inventario_app.zip
@@ -34,13 +34,15 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Injeta a permissão de CÂMERA no AndroidManifest.xml
-      - name: Add Camera Permission
+      # 5. Injeta as permissões e recursos de CÂMERA necessários no AndroidManifest.xml
+      - name: Add Camera Permission & Feature Flags
         run: |
           MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>' $MANIFEST_PATH
 
-      # 6. Instala as dependências do pubspec.yaml (mobile_scanner, provider, etc)
+      # 6. Instala as dependências
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
@@ -50,7 +52,7 @@ jobs:
         working-directory: ./inventario_app
         run: flutter build apk --release
 
-      # 8. Disponibiliza o APK para download no GitHub
+      # 8. Disponibiliza para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
