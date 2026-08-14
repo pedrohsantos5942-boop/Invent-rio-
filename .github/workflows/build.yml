@@ -11,33 +11,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o arquivo zip enviado no repositório
+      # 1. Descompacta o zip
       - name: Extract project zip
         run: unzip inventario_app.zip
 
-      # 2. Configura o Java
+      # 2. Configura Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. Configura o Flutter
+      # 3. Configura Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 4. Baixa as dependências
+      # 4. Gera os arquivos nativos do Android que estão faltando
+      - name: Recreate Android native files
+        working-directory: ./inventario_app
+        run: flutter create --platforms=android .
+
+      # 5. Baixa as dependências
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 5. Compila o APK
+      # 6. Compila o APK
       - name: Build APK
         working-directory: ./inventario_app
         run: flutter build apk --release
 
+      # 7. Disponibiliza o download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
