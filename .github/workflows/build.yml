@@ -41,15 +41,26 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-      # 6. Atualiza compileSdk para 35 e minSdkVersion para 21
-      - name: Fix Android SDK Versions
-        working-directory: ./inventario_app/android/app
+      # 6. Força o SDK 35 em TODOS os módulos/plugins (incluindo mobile_scanner)
+      - name: Force SDK 35 across all Gradle subprojects
+        working-directory: ./inventario_app/android
         run: |
-          sed -i 's/compileSdk = .*/compileSdk = 35/' build.gradle.kts || true
-          sed -i 's/targetSdk = .*/targetSdk = 35/' build.gradle.kts || true
-          sed -i 's/minSdk = .*/minSdk = 21/' build.gradle.kts || true
-          sed -i 's/flutter.compileSdkVersion/35/' build.gradle || true
-          sed -i 's/flutter.minSdkVersion/21/' build.gradle || true
+          cat << 'EOF' >> build.gradle
+
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          compileSdkVersion 35
+                          defaultConfig {
+                              targetSdkVersion 35
+                              minSdkVersion 21
+                          }
+                      }
+                  }
+              }
+          }
+          EOF
 
       # 7. Instala as dependências do pubspec.yaml
       - name: Get dependencies
