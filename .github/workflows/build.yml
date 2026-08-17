@@ -41,21 +41,25 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-      # 6. Instala as dependências do pubspec.yaml
+      # 6. Força compileSdk, targetSdk e minSdk via gradle.properties
+      - name: Force Android SDK Versions
+        working-directory: ./inventario_app/android
+        run: |
+          echo "flutter.compileSdkVersion=34" >> gradle.properties
+          echo "flutter.targetSdkVersion=34" >> gradle.properties
+          echo "flutter.minSdkVersion=21" >> gradle.properties
+
+      # 7. Instala as dependências do pubspec.yaml
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 7. Compila o APK em modo release injetando as versões de SDK no Gradle
+      # 8. Compila o APK em modo release
       - name: Build APK
         working-directory: ./inventario_app
-        run: |
-          flutter build apk --release --extra-front-end-options=--no-implicit-casts \
-            --build-property=android.compileSdkVersion=34 \
-            --build-property=android.targetSdkVersion=34 \
-            --build-property=android.minSdkVersion=21
+        run: flutter build apk --release
 
-      # 8. Disponibiliza o APK para download
+      # 9. Disponibiliza o APK para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
