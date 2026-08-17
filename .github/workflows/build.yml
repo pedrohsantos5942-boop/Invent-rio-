@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o arquivo zip mais recente
+      # 1. Descompacta o arquivo zip
       - name: Extract project zip
         run: |
           unzip -o "*.zip"
@@ -34,8 +34,8 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Injeta permissões no AndroidManifest e força minSdkVersion 21
-      - name: Configure Android Permissions & Min SDK
+      # 5. Injeta permissões e eleva compileSdkVersion / targetSdkVersion para 34 e minSdkVersion para 21
+      - name: Configure Android Permissions & SDK Versions
         run: |
           MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
@@ -44,6 +44,10 @@ jobs:
           GRADLE_PATH="inventario_app/android/app/build.gradle"
           sed -i 's/minSdkVersion .*/minSdkVersion 21/' $GRADLE_PATH || true
           sed -i 's/flutter.minSdkVersion/21/' $GRADLE_PATH || true
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' $GRADLE_PATH || true
+          sed -i 's/flutter.compileSdkVersion/34/' $GRADLE_PATH || true
+          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' $GRADLE_PATH || true
+          sed -i 's/flutter.targetSdkVersion/34/' $GRADLE_PATH || true
 
       # 6. Instala as dependências do pubspec.yaml
       - name: Get dependencies
