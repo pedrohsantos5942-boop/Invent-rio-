@@ -34,20 +34,38 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Injeta permissões e eleva compileSdkVersion / targetSdkVersion para 34 e minSdkVersion para 21
-      - name: Configure Android Permissions & SDK Versions
+      # 5. Força SDK 34 e minSdkVersion 21 globalmente em todas as dependências
+      - name: Force Android SDK 34 & Permissions
         run: |
           MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' $MANIFEST_PATH
-          
-          GRADLE_PATH="inventario_app/android/app/build.gradle"
-          sed -i 's/minSdkVersion .*/minSdkVersion 21/' $GRADLE_PATH || true
-          sed -i 's/flutter.minSdkVersion/21/' $GRADLE_PATH || true
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' $GRADLE_PATH || true
-          sed -i 's/flutter.compileSdkVersion/34/' $GRADLE_PATH || true
-          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' $GRADLE_PATH || true
-          sed -i 's/flutter.targetSdkVersion/34/' $GRADLE_PATH || true
+
+          APP_GRADLE="inventario_app/android/app/build.gradle"
+          ROOT_GRADLE="inventario_app/android/build.gradle"
+
+          # Substitui declarações diretas de versão no gradle do app
+          sed -i 's/compileSdkVersion.*/compileSdkVersion 34/' $APP_GRADLE
+          sed -i 's/targetSdkVersion.*/targetSdkVersion 34/' $APP_GRADLE
+          sed -i 's/minSdkVersion.*/minSdkVersion 21/' $APP_GRADLE
+
+          # Força a sobreescrição das versões para TODOS os subprojetos e dependências (como mobile_scanner)
+          cat << 'EOF' >> inventario_app/android/build.gradle
+
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          compileSdkVersion 34
+                          defaultConfig {
+                              targetSdkVersion 34
+                              minSdkVersion 21
+                          }
+                      }
+                  }
+              }
+          }
+          EOF
 
       # 6. Instala as dependências do pubspec.yaml
       - name: Get dependencies
