@@ -34,51 +34,28 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Injeta permissões no AndroidManifest
+      # 5. Injeta as permissões de câmera no AndroidManifest
       - name: Configure Android Permissions
         working-directory: ./inventario_app/android/app/src/main
         run: |
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-      # 6. Força SDK 34 e minSdkVersion 21 em todas as dependências nativas
-      - name: Force Android SDK Versions
-        working-directory: ./inventario_app/android
-        run: |
-          cat << 'EOF' >> settings.gradle
-          
-          gradle.beforeProject { project ->
-              project.plugins.withId('com.android.application') {
-                  project.android {
-                      compileSdkVersion 34
-                      defaultConfig {
-                          targetSdkVersion 34
-                          minSdkVersion 21
-                      }
-                  }
-              }
-              project.plugins.withId('com.android.library') {
-                  project.android {
-                      compileSdkVersion 34
-                      defaultConfig {
-                          minSdkVersion 21
-                      }
-                  }
-              }
-          }
-          EOF
-
-      # 7. Instala as dependências do pubspec.yaml
+      # 6. Instala as dependências do pubspec.yaml
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 8. Compila o APK em modo release
+      # 7. Compila o APK em modo release injetando as versões de SDK no Gradle
       - name: Build APK
         working-directory: ./inventario_app
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release --extra-front-end-options=--no-implicit-casts \
+            --build-property=android.compileSdkVersion=34 \
+            --build-property=android.targetSdkVersion=34 \
+            --build-property=android.minSdkVersion=21
 
-      # 9. Disponibiliza o APK para download
+      # 8. Disponibiliza o APK para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
