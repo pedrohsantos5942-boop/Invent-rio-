@@ -11,10 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o arquivo zip enviado
+      # 1. Descompacta o arquivo zip mais recente
       - name: Extract project zip
         run: |
-          unzip -o "inventario_app (2).zip" || unzip -o "inventario_app (1).zip" || unzip -o inventario_app.zip
+          unzip -o "*.zip"
 
       # 2. Configura o Java 17
       - name: Set up Java
@@ -34,25 +34,28 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Injeta as permissões e recursos de CÂMERA necessários no AndroidManifest.xml
-      - name: Add Camera Permission & Feature Flags
+      # 5. Injeta permissões no AndroidManifest e força minSdkVersion 21
+      - name: Configure Android Permissions & Min SDK
         run: |
           MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>' $MANIFEST_PATH
+          
+          GRADLE_PATH="inventario_app/android/app/build.gradle"
+          sed -i 's/minSdkVersion .*/minSdkVersion 21/' $GRADLE_PATH || true
+          sed -i 's/flutter.minSdkVersion/21/' $GRADLE_PATH || true
 
-      # 6. Instala as dependências
+      # 6. Instala as dependências do pubspec.yaml
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 7. Compila o arquivo APK final
+      # 7. Compila o APK em modo release
       - name: Build APK
         working-directory: ./inventario_app
         run: flutter build apk --release
 
-      # 8. Disponibiliza para download
+      # 8. Disponibiliza o APK para download no GitHub Actions
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
