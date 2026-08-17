@@ -41,13 +41,15 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-      # 6. Força compileSdk, targetSdk e minSdk via gradle.properties
-      - name: Force Android SDK Versions
-        working-directory: ./inventario_app/android
+      # 6. Corrigi o compileSdk e minSdkVersion no build.gradle.kts do app
+      - name: Fix Android SDK Versions
+        working-directory: ./inventario_app/android/app
         run: |
-          echo "flutter.compileSdkVersion=34" >> gradle.properties
-          echo "flutter.targetSdkVersion=34" >> gradle.properties
-          echo "flutter.minSdkVersion=21" >> gradle.properties
+          sed -i 's/compileSdk = .*/compileSdk = 34/' build.gradle.kts || true
+          sed -i 's/targetSdk = .*/targetSdk = 34/' build.gradle.kts || true
+          sed -i 's/minSdk = .*/minSdk = 21/' build.gradle.kts || true
+          sed -i 's/flutter.compileSdkVersion/34/' build.gradle || true
+          sed -i 's/flutter.minSdkVersion/21/' build.gradle || true
 
       # 7. Instala as dependências do pubspec.yaml
       - name: Get dependencies
