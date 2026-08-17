@@ -41,8 +41,8 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-      # 6. Força o SDK 35 em TODOS os módulos/plugins (incluindo mobile_scanner)
-      - name: Force SDK 35 across all Gradle subprojects
+      # 6. Força SDK 35 e minSdkVersion 23 em todos os subprojetos
+      - name: Force SDK 35 & minSdk 23 across Gradle subprojects
         working-directory: ./inventario_app/android
         run: |
           cat << 'EOF' >> build.gradle
@@ -54,7 +54,7 @@ jobs:
                           compileSdkVersion 35
                           defaultConfig {
                               targetSdkVersion 35
-                              minSdkVersion 21
+                              minSdkVersion 23
                           }
                       }
                   }
