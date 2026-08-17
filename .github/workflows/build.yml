@@ -34,50 +34,51 @@ jobs:
         working-directory: ./inventario_app
         run: flutter create --platforms=android .
 
-      # 5. Força SDK 34 e minSdkVersion 21 globalmente em todas as dependências
-      - name: Force Android SDK 34 & Permissions
+      # 5. Injeta permissões no AndroidManifest
+      - name: Configure Android Permissions
+        working-directory: ./inventario_app/android/app/src/main
         run: |
-          MANIFEST_PATH="inventario_app/android/app/src/main/AndroidManifest.xml"
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' $MANIFEST_PATH
-          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' $MANIFEST_PATH
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
+          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
 
-          APP_GRADLE="inventario_app/android/app/build.gradle"
-          ROOT_GRADLE="inventario_app/android/build.gradle"
-
-          # Substitui declarações diretas de versão no gradle do app
-          sed -i 's/compileSdkVersion.*/compileSdkVersion 34/' $APP_GRADLE
-          sed -i 's/targetSdkVersion.*/targetSdkVersion 34/' $APP_GRADLE
-          sed -i 's/minSdkVersion.*/minSdkVersion 21/' $APP_GRADLE
-
-          # Força a sobreescrição das versões para TODOS os subprojetos e dependências (como mobile_scanner)
-          cat << 'EOF' >> inventario_app/android/build.gradle
-
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          compileSdkVersion 34
-                          defaultConfig {
-                              targetSdkVersion 34
-                              minSdkVersion 21
-                          }
+      # 6. Força SDK 34 e minSdkVersion 21 em todas as dependências nativas
+      - name: Force Android SDK Versions
+        working-directory: ./inventario_app/android
+        run: |
+          cat << 'EOF' >> settings.gradle
+          
+          gradle.beforeProject { project ->
+              project.plugins.withId('com.android.application') {
+                  project.android {
+                      compileSdkVersion 34
+                      defaultConfig {
+                          targetSdkVersion 34
+                          minSdkVersion 21
+                      }
+                  }
+              }
+              project.plugins.withId('com.android.library') {
+                  project.android {
+                      compileSdkVersion 34
+                      defaultConfig {
+                          minSdkVersion 21
                       }
                   }
               }
           }
           EOF
 
-      # 6. Instala as dependências do pubspec.yaml
+      # 7. Instala as dependências do pubspec.yaml
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 7. Compila o APK em modo release
+      # 8. Compila o APK em modo release
       - name: Build APK
         working-directory: ./inventario_app
         run: flutter build apk --release
 
-      # 8. Disponibiliza o APK para download no GitHub Actions
+      # 9. Disponibiliza o APK para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
