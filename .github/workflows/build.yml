@@ -29,24 +29,32 @@ jobs:
         with:
           channel: 'stable'
 
-      # 4. Atualiza o Gradle Wrapper para a versão 8.14 (exigida pelo Flutter)
+      # 4. Atualiza o Gradle Wrapper para a versão 8.14
       - name: Upgrade Gradle Version
         working-directory: ./inventario_app/android
         run: |
           sed -i 's/gradle-8.10.2-bin.zip/gradle-8.14-bin.zip/g' gradle/wrapper/gradle-wrapper.properties || true
           sed -i 's/gradle-8.10.2-all.zip/gradle-8.14-bin.zip/g' gradle/wrapper/gradle-wrapper.properties || true
 
-      # 5. Instala as dependências
+      # 5. Adiciona regra no ProGuard para ignorar os avisos de classes ausentes do Play Core no R8
+      - name: Configure ProGuard / R8 rules
+        working-directory: ./inventario_app/android/app
+        run: |
+          echo "-dontwarn com.google.android.play.core.**" >> proguard-rules.pro
+          echo "-dontwarn io.flutter.embedding.engine.deferredcomponents.**" >> proguard-rules.pro
+          echo "-keep class com.google.android.play.core.** { *; }" >> proguard-rules.pro
+
+      # 6. Instala as dependências
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 6. Compila o APK em modo release
+      # 7. Compila o APK em modo release sem minificação de código
       - name: Build APK
         working-directory: ./inventario_app
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: flutter build apk --release --no-shrink --android-skip-build-dependency-validation
 
-      # 7. Disponibiliza o APK para download
+      # 8. Disponibiliza o APK para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
