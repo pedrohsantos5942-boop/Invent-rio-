@@ -11,13 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Descompacta o arquivo zip
+      # 1. Descompacta o arquivo zip (se seu projeto estiver compactado no repo)
       - name: Extract project zip
         run: |
-          unzip -o "*.zip"
+          unzip -o "*.zip" || true
 
-      # 2. Configura o Java 17
-      - name: Set up Java
+      # 2. Configura o Java 17 (Obrigatório para o AGP 8.x e SDK 35)
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -29,50 +29,17 @@ jobs:
         with:
           channel: 'stable'
 
-      # 4. Gera a estrutura de arquivos nativos do Android
-      - name: Recreate Android native files
-        working-directory: ./inventario_app
-        run: flutter create --platforms=android .
-
-      # 5. Injeta as permissões de câmera no AndroidManifest
-      - name: Configure Android Permissions
-        working-directory: ./inventario_app/android/app/src/main
-        run: |
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA"/>' AndroidManifest.xml
-          sed -i '/<manifest/a \    <uses-feature android:name="android.hardware.camera" android:required="false"/>' AndroidManifest.xml
-
-      # 6. Força SDK 35 e minSdkVersion 23 em todos os subprojetos
-      - name: Force SDK 35 & minSdk 23 across Gradle subprojects
-        working-directory: ./inventario_app/android
-        run: |
-          cat << 'EOF' >> build.gradle
-
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          compileSdkVersion 35
-                          defaultConfig {
-                              targetSdkVersion 35
-                              minSdkVersion 23
-                          }
-                      }
-                  }
-              }
-          }
-          EOF
-
-      # 7. Instala as dependências do pubspec.yaml
+      # 4. Baixa os pacotes do pubspec.yaml
       - name: Get dependencies
         working-directory: ./inventario_app
         run: flutter pub get
 
-      # 8. Compila o APK em modo release
+      # 5. Compila o APK em modo release usando as configurações nativas corrigidas
       - name: Build APK
         working-directory: ./inventario_app
         run: flutter build apk --release
 
-      # 9. Disponibiliza o APK para download
+      # 6. Disponibiliza o APK para download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
